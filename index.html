@@ -41,6 +41,11 @@ select.person-select{margin-top:5px;font-size:14px}
 .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{background:#f5f8f9;border-radius:13px;padding:12px}.stat b{display:block;font-size:23px}
 .trip{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:9px}.trip .date{font-weight:800}.tag{font-size:11px;background:#edf2f5;border-radius:20px;padding:4px 8px;color:#52636d}
 .personrow{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.personrow:last-child{border:0}
+.debt-person{border-bottom:1px solid var(--line)}.debt-person:last-child{border:0}
+.debt-person summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 2px;font-weight:750;cursor:pointer}
+.debt-person summary::-webkit-details-marker{display:none}.debt-person summary:after{content:"＋";color:var(--muted);font-weight:500}
+.debt-person[open] summary:after{content:"−"}.debt-detail{padding:0 8px 8px 12px}
+.date-row{margin-bottom:8px}.date-row input{max-width:220px}
 .balance{font-weight:800}.pos{color:var(--green)}.neg{color:var(--red)}.zero{color:var(--muted)}
 .actions{display:flex;gap:7px;margin-top:10px}.actions button{flex:1}
 .hidden{display:none!important}
@@ -61,16 +66,15 @@ footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-s
 <section id="new">
 <div class="panel">
 <div class="between"><h2 id="formTitle">Zaznamenat jízdu</h2><span class="tag">5 míst</span></div>
-<div class="row">
-<div><label for="tripDate">Datum jízdy</label><input id="tripDate" type="date"></div>
-<div><label for="driver">Řidič</label><select id="driver"></select></div>
+<div class="row date-row">
+<div><input id="tripDate" type="date" aria-label="Datum jízdy"></div>
 </div>
 <div class="spacer"></div>
 <label>Obsazení auta · klikni na sedačku a vyber člověka</label>
 <div class="car">
 <div class="wind"></div>
 <div class="seats">
-<button class="seat driver" id="driverSeat" type="button"><span class="role">Řidič</span><span class="person" id="driverName">Vyber řidiče</span></button>
+<button class="seat driver empty" id="driverSeat" type="button"><span class="role">Řidič</span><span class="person" id="driverName">Vyber řidiče</span></button>
 <button class="seat empty" id="seat0" type="button"><span class="role">Spolujezdec 1</span><span class="person">Volné místo</span></button>
 </div>
 <div class="dash"></div>
@@ -81,7 +85,7 @@ footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-s
 </div>
 </div>
 <div class="spacer"></div>
-<div class="notice">Řidič se vybírá nahoře. Potom obsazuj až čtyři sedačky. Volná místa není nutné vyplňovat.</div>
+<div class="notice">Klepni na místo řidiče nebo spolujezdce a vyber člověka. Volná místa není nutné vyplňovat.</div>
 <div class="spacer"></div>
 <div class="row">
 <button class="btn secondary" id="clearSeats" type="button">Vymazat sedačky</button>
@@ -92,8 +96,7 @@ footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-s
 </section>
 
 <section id="debts" class="hidden">
-<div class="panel"><h2>Vzájemné saldo</h2><div class="small">Kladné číslo = člověk má jízdu k dobru. Záporné = dluží jízdu. Rozhodující jsou vždy konkrétní dvojice.</div><div id="debtPeople" style="margin-top:10px"></div></div>
-<div class="panel"><h2>Kdo komu dluží</h2><div id="debtPairs"></div></div>
+<div class="panel"><h2>Dluhy podle lidí</h2><div class="small">Rozkliknutím člověka zobrazíš, komu dluží jízdy.</div><div id="debtPeople" style="margin-top:10px"></div></div>
 </section>
 
 <section id="history" class="hidden">
@@ -131,27 +134,63 @@ function setTab(tab){document.querySelectorAll('.tab').forEach(b=>b.classList.to
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 
 function fillSelects(){
- const d=document.getElementById('driver'), old=d.value;
- d.innerHTML='<option value="">Vyber řidiče…</option>'+activePeople().map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
- if(activePeople().some(p=>p.id===old))d.value=old;
  const f=document.getElementById('historyFilter'), prev=f.value;
  f.innerHTML='<option value="">Všichni</option>'+state.people.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
  f.value=prev;
 }
-function renderCar(){
- let driverId=document.getElementById('driver').value;
- document.getElementById('driverName').textContent=driverId?name(driverId):'Vyber řidiče';
- seatIds.forEach((id,i)=>{let el=document.getElementById('seat'+i);let label='Spolujezdec '+(i+1);if(id){el.className='seat selected';el.innerHTML=`<span class="role">${label}</span><span class="person">${escapeHtml(name(id))}</span>`}else{el.className='seat empty';el.innerHTML=`<span class="role">${label}</span><span class="person">Volné místo</span>`}});
+function driverId(){return document.getElementById('driverSeat').dataset.personId||''}
+function setDriver(id){
+ const el=document.getElementById('driverSeat');
+ el.dataset.personId=id||'';
+ document.getElementById('driverName').textContent=id?name(id):'Vyber řidiče';
+ el.className='seat driver '+(id?'selected':'empty');
 }
-document.getElementById('driver').addEventListener('change',()=>{let d=document.getElementById('driver').value;seatIds=seatIds.map(id=>id===d?null:id);renderCar()});
+function renderCar(){
+ const driver=driverId();
+ seatIds.forEach((id,i)=>{
+  let el=document.getElementById('seat'+i),label='Spolujezdec '+(i+1);
+  if(id){el.className='seat selected';el.innerHTML=`<span class="role">${label}</span><span class="person">${escapeHtml(name(id))}</span>`}
+  else{el.className='seat empty';el.innerHTML=`<span class="role">${label}</span><span class="person">Volné místo</span>`}
+ });
+}
+document.getElementById('driverSeat').addEventListener('click',()=>openSeat(-1));
 for(let i=0;i<4;i++)document.getElementById('seat'+i).addEventListener('click',()=>openSeat(i));
-function openSeat(i){activeSeat=i;let driverId=document.getElementById('driver').value;let used=seatIds.filter((x,j)=>x&&j!==i);let choices=activePeople().filter(p=>p.id!==driverId&&!used.includes(p.id));let box=document.getElementById('modalChoices');box.innerHTML='';let clear=document.createElement('button');clear.className='btn ghost';clear.textContent='Nechat volné';clear.onclick=()=>{seatIds[activeSeat]=null;closeModal();renderCar()};box.append(clear);choices.forEach(p=>{let b=document.createElement('button');b.className='btn secondary';b.textContent=p.name;b.onclick=()=>{seatIds[activeSeat]=p.id;closeModal();renderCar()};box.append(b)});document.getElementById('modalTitle').textContent=i===0?'Přední spolujezdec':'Zadní spolujezdec';document.getElementById('modal').classList.remove('hidden')}
+function openSeat(i){
+ activeSeat=i;
+ let driver=driverId();
+ let used=seatIds.filter((x,j)=>x&&j!==i);
+ let choices=activePeople().filter(p=>{
+   if(i===-1)return !used.includes(p.id);
+   return p.id!==driver&&!used.includes(p.id);
+ });
+ let box=document.getElementById('modalChoices');box.innerHTML='';
+ let clear=document.createElement('button');clear.className='btn ghost';clear.textContent='Nechat volné';
+ clear.onclick=()=>{
+   if(activeSeat===-1)setDriver('');
+   else seatIds[activeSeat]=null;
+   closeModal();renderCar()
+ };
+ box.append(clear);
+ choices.forEach(p=>{
+   let b=document.createElement('button');b.className='btn secondary';b.textContent=p.name;
+   b.onclick=()=>{
+     if(activeSeat===-1){
+       setDriver(p.id);
+       seatIds=seatIds.map(id=>id===p.id?null:id);
+     }else seatIds[activeSeat]=p.id;
+     closeModal();renderCar()
+   };
+   box.append(b)
+ });
+ document.getElementById('modalTitle').textContent=i===-1?'Vyber řidiče':'Vyber spolujezdce '+(i+1);
+ document.getElementById('modal').classList.remove('hidden')
+}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
 document.getElementById('modalClose').onclick=closeModal;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
-document.getElementById('clearSeats').onclick=()=>{seatIds=[null,null,null,null];renderCar()};
-function resetForm(){editingId=null;seatIds=[null,null,null,null];document.getElementById('tripDate').value=today();document.getElementById('driver').value='';document.getElementById('formTitle').textContent='Zaznamenat jízdu';document.getElementById('saveTrip').textContent='Uložit jízdu';document.getElementById('cancelEdit').classList.add('hidden');renderCar()}
+document.getElementById('clearSeats').onclick=()=>{seatIds=[null,null,null,null];setDriver('');renderCar()};
+function resetForm(){editingId=null;seatIds=[null,null,null,null];document.getElementById('tripDate').value=today();setDriver('');document.getElementById('formTitle').textContent='Zaznamenat jízdu';document.getElementById('saveTrip').textContent='Uložit jízdu';document.getElementById('cancelEdit').classList.add('hidden');renderCar()}
 document.getElementById('saveTrip').onclick=()=>{
- let date=document.getElementById('tripDate').value,driver=document.getElementById('driver').value;
+ let date=document.getElementById('tripDate').value,driver=driverId();
  if(!date||!driver){alert('Vyber datum a řidiče.');return}
  let passengers=seatIds.filter(Boolean);
  if(new Set(passengers).size!==passengers.length||passengers.includes(driver)){alert('Každý člověk může být v autě pouze jednou.');return}
@@ -172,9 +211,13 @@ function calculate(){
  return {pairs,totals};
 }
 function renderDebts(){
- let {pairs,totals}=calculate();
- document.getElementById('debtPeople').innerHTML=state.people.map(p=>{let v=totals[p.id]||0;return `<div class="personrow"><div><b>${escapeHtml(p.name)}</b><div class="small">${v<0?'Dluží celkem':v>0?'Má k dobru':'Vyrovnáno'}</div></div><div class="balance ${v<0?'neg':v>0?'pos':'zero'}">${v>0?'+':''}${v}</div></div>`}).join('');
- document.getElementById('debtPairs').innerHTML=pairs.length?pairs.map(x=>`<div class="personrow"><div><b>${escapeHtml(name(x.from))}</b><div class="small">dluží člověku ${escapeHtml(name(x.to))}</div></div><div class="balance neg">${x.count} ${x.count===1?'jízda':'jízdy'}</div></div>`).join(''):'<p class="muted">Nikdo nikomu nic nedluží. Vše je vyrovnané.</p>';
+ let {pairs}=calculate();
+ document.getElementById('debtPeople').innerHTML=state.people.map(p=>{
+   let owed=pairs.filter(x=>x.from===p.id);
+   let total=owed.reduce((sum,x)=>sum+x.count,0);
+   let detail=owed.length?owed.map(x=>`<div class="personrow"><span>Dluží člověku <b>${escapeHtml(name(x.to))}</b></span><b class="neg">${x.count} ${x.count===1?'jízda':'jízdy'}</b></div>`).join(''):'<div class="small" style="padding:10px 0">Nikomu nic nedluží.</div>';
+   return `<details class="debt-person"><summary><span>${escapeHtml(p.name)}</span><span class="small">${total?`Dluží ${total} ${total===1?'jízdu':'jízd'}`:'Bez dluhu'}</span></summary><div class="debt-detail">${detail}</div></details>`;
+ }).join('');
 }
 function renderHistory(){
  let filter=document.getElementById('historyFilter').value,sort=document.getElementById('sortOrder').value;
@@ -184,7 +227,7 @@ function renderHistory(){
  list.innerHTML=trips.length?trips.map(t=>`<div class="trip"><div class="between"><span class="date">${escapeHtml(t.date.split('-').reverse().join('. '))}.</span><span class="tag">${(t.passengers||[]).length+1} / 5 míst</span></div><div style="margin-top:7px"><b>Řidič:</b> ${escapeHtml(name(t.driver))}</div><div class="small" style="margin-top:3px"><b>Spolujezdci:</b> ${(t.passengers||[]).length?t.passengers.map(x=>escapeHtml(name(x))).join(', '):'Nikdo'}</div><div class="actions"><button class="btn secondary" onclick="editTrip('${t.id}')">Upravit</button><button class="btn danger" onclick="deleteTrip('${t.id}')">Smazat</button></div></div>`).join(''):'<p class="muted">Zatím tu nejsou žádné jízdy. Můžeš přidat i jízdu z minulého týdne nebo měsíce.</p>';
 }
 document.getElementById('historyFilter').onchange=renderHistory;document.getElementById('sortOrder').onchange=renderHistory;
-window.editTrip=id=>{let t=state.trips.find(x=>x.id===id);if(!t)return;editingId=id;document.getElementById('tripDate').value=t.date;document.getElementById('driver').value=t.driver;seatIds=[...t.passengers,null,null,null,null].slice(0,4);document.getElementById('formTitle').textContent='Upravit jízdu';document.getElementById('saveTrip').textContent='Uložit změny';document.getElementById('cancelEdit').classList.remove('hidden');renderCar();setTab('new');window.scrollTo({top:0,behavior:'smooth'})};
+window.editTrip=id=>{let t=state.trips.find(x=>x.id===id);if(!t)return;editingId=id;document.getElementById('tripDate').value=t.date;setDriver(t.driver);seatIds=[...t.passengers,null,null,null,null].slice(0,4);document.getElementById('formTitle').textContent='Upravit jízdu';document.getElementById('saveTrip').textContent='Uložit změny';document.getElementById('cancelEdit').classList.remove('hidden');renderCar();setTab('new');window.scrollTo({top:0,behavior:'smooth'})};
 window.deleteTrip=id=>{if(confirm('Opravdu smazat tuto jízdu? Dluhy se přepočítají.')){state.trips=state.trips.filter(t=>t.id!==id);persist();renderHistory();renderDebts()}};
 function renderPeople(){document.getElementById('peopleList').innerHTML=state.people.map(p=>`<div class="personrow"><div style="flex:1"><input aria-label="Jméno" value="${escapeHtml(p.name)}" data-name="${p.id}" maxlength="32"></div><button class="btn ${p.active===false?'secondary':'ghost'}" data-toggle="${p.id}" style="flex:0 0 auto">${p.active===false?'Neaktivní':'Aktivní'}</button></div>`).join('');document.querySelectorAll('[data-name]').forEach(el=>el.onchange=()=>{let p=person(el.dataset.name);if(p&&el.value.trim()){p.name=el.value.trim();persist()}});document.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=()=>{let p=person(el.dataset.toggle);p.active=p.active===false;persist()})}
 document.getElementById('addPerson').onclick=()=>{let inp=document.getElementById('newPerson'),n=inp.value.trim();if(!n)return;if(state.people.some(p=>p.name.toLowerCase()===n.toLowerCase())){alert('Toto jméno už v seznamu je.');return}state.people.push({id:'p'+Date.now(),name:n,active:true});inp.value='';persist()};
@@ -194,6 +237,6 @@ document.getElementById('importFile').onchange=async e=>{let f=e.target.files[0]
 document.getElementById('resetData').onclick=()=>{if(confirm('Opravdu smazat všechny jízdy i vlastní změny jmen?')){state={people:defaultPeople.map(p=>({...p})),trips:[]};persist();resetForm()}};
 function renderAll(){fillSelects();renderCar();renderDebts();renderHistory();renderPeople()}
 document.getElementById('tripDate').value=today();renderAll();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js?v=2',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js?v=3',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 </script>
 </body></html>
