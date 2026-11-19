@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#172b3a">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Spolujízda</title>
+<style>
+:root{--bg:#f2f5f7;--panel:#fff;--ink:#172b3a;--muted:#687987;--line:#dce4e9;--blue:#176b87;--blue2:#e5f2f6;--green:#18794e;--red:#b54747;--amber:#946200;--shadow:0 8px 24px #19384b12}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(135deg,#172b3a,#24546b);color:#fff;padding:22px 18px 18px;border-radius:0 0 24px 24px}
+.head{max-width:760px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:25px;margin:0;letter-spacing:-.5px}.sub{opacity:.78;font-size:13px;margin-top:3px}
+main{max-width:760px;margin:0 auto;padding:16px 14px 100px}
+.tabs{display:flex;gap:7px;margin:0 0 15px;position:sticky;top:0;padding:9px 0;background:var(--bg);z-index:5}
+.tab{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:12px;padding:10px 13px;font-weight:650;flex:1}
+.tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}
+label{font-size:13px;color:var(--muted);font-weight:650;display:block;margin:0 0 6px}
+input,select{width:100%;border:1px solid #cbd7de;background:#fff;border-radius:11px;padding:12px 11px;font:inherit;color:var(--ink);min-height:46px}
+button{font:inherit;cursor:pointer}
+.btn{border:0;background:var(--blue);color:#fff;padding:12px 15px;border-radius:12px;font-weight:700;min-height:45px}
+.btn.secondary{background:var(--blue2);color:var(--blue)}.btn.ghost{background:#f1f4f6;color:var(--ink)}.btn.danger{background:#fff0f0;color:var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1;min-width:0}.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{font-size:12px;color:var(--muted)}.muted{color:var(--muted)}.spacer{height:12px}
+.car{max-width:410px;margin:10px auto 0;background:#e9eef1;border:2px solid #9aabb5;border-radius:44% 44% 24px 24px / 18% 18% 12px 12px;padding:22px 14px 17px;position:relative}
+.car:before{content:"";position:absolute;inset:8% 9%;border:1px solid #c6d1d7;border-radius:42% 42% 18px 18px;pointer-events:none}
+.wind{height:24px;background:#c7dbe3;border-radius:50% 50% 8px 8px;margin:0 18% 13px;position:relative}
+.seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;position:relative}
+.seat{border:2px solid #aebdc5;background:#fff;border-radius:13px;min-height:84px;padding:9px 5px;text-align:center;color:var(--ink);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px}
+.seat .person{font-size:13px;font-weight:750;overflow-wrap:anywhere}.seat .role{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.seat.driver{border-color:#176b87;background:#dceff5}.seat.selected{border-color:#176b87;background:#e5f2f6}
+.seat.empty{border-style:dashed;color:#84949d}.seat .emoji{font-size:20px;line-height:1}
+.rear{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px;position:relative}
+.rear .seat{min-height:76px}
+.dash{height:7px;background:#aab9c1;border-radius:8px;margin:15px 14% 8px;position:relative}
+select.person-select{margin-top:5px;font-size:14px}
+.notice{background:#f0f6f8;border-radius:12px;padding:11px 12px;font-size:13px;color:#355365}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{background:#f5f8f9;border-radius:13px;padding:12px}.stat b{display:block;font-size:23px}
+.trip{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:9px}.trip .date{font-weight:800}.tag{font-size:11px;background:#edf2f5;border-radius:20px;padding:4px 8px;color:#52636d}
+.personrow{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.personrow:last-child{border:0}
+.balance{font-weight:800}.pos{color:var(--green)}.neg{color:var(--red)}.zero{color:var(--muted)}
+.actions{display:flex;gap:7px;margin-top:10px}.actions button{flex:1}
+.hidden{display:none!important}
+footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-size:11px;text-align:center}
+@media(min-width:600px){main{padding-top:22px}.seat{min-height:92px}.rear .seat{min-height:84px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>🚗 Spolujízda</h1><div class="sub">Evidence jízd a vzájemných dluhů · offline</div></div><div style="font-size:12px;opacity:.8;text-align:right">ULOŽENO<br>V TELEFONU</div></div></header>
+<main>
+<nav class="tabs">
+<button class="tab active" data-tab="new">＋ Jízda</button>
+<button class="tab" data-tab="debts">Dluhy</button>
+<button class="tab" data-tab="history">Historie</button>
+<button class="tab" data-tab="settings">Lidé</button>
+</nav>
+
+<section id="new">
+<div class="panel">
+<div class="between"><h2 id="formTitle">Zaznamenat jízdu</h2><span class="tag">5 míst</span></div>
+<div class="row">
+<div><label for="tripDate">Datum jízdy</label><input id="tripDate" type="date"></div>
+<div><label for="driver">Řidič</label><select id="driver"></select></div>
+</div>
+<div class="spacer"></div>
+<label>Obsazení auta · klikni na sedačku a vyber člověka</label>
+<div class="car">
+<div class="wind"></div>
+<div class="seats">
+<button class="seat driver" id="driverSeat" type="button"><span class="emoji">🧑‍✈️</span><span class="role">Řidič</span><span class="person" id="driverName">Vyber řidiče</span></button>
+<button class="seat empty" id="seat0" type="button"><span class="emoji">🧍</span><span class="role">Spolujezdec</span><span class="person">Volné místo</span></button>
+</div>
+<div class="dash"></div>
+<div class="rear">
+<button class="seat empty" id="seat1" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
+<button class="seat empty" id="seat2" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
+<button class="seat empty" id="seat3" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
+</div>
+</div>
+<div class="spacer"></div>
+<div class="notice">Řidič se vybírá nahoře. Potom obsazuj až čtyři sedačky. Volná místa není nutné vyplňovat.</div>
+<div class="spacer"></div>
+<div class="row">
+<button class="btn secondary" id="clearSeats" type="button">Vymazat sedačky</button>
+<button class="btn" id="saveTrip" type="button">Uložit jízdu</button>
+</div>
+<button class="btn ghost hidden" id="cancelEdit" type="button" style="width:100%;margin-top:8px">Zrušit úpravu</button>
+</div>
+</section>
+
+<section id="debts" class="hidden">
+<div class="panel"><h2>Vzájemné saldo</h2><div class="small">Kladné číslo = člověk má jízdu k dobru. Záporné = dluží jízdu. Rozhodující jsou vždy konkrétní dvojice.</div><div id="debtPeople" style="margin-top:10px"></div></div>
+<div class="panel"><h2>Kdo komu dluží</h2><div id="debtPairs"></div></div>
+</section>
+
+<section id="history" class="hidden">
+<div class="panel"><div class="between"><h2>Historie jízd</h2><span class="tag" id="tripCount">0 jízd</span></div><div class="row"><div><label for="historyFilter">Filtrovat podle člověka</label><select id="historyFilter"></select></div><div><label for="sortOrder">Řazení</label><select id="sortOrder"><option value="desc">Nejnovější první</option><option value="asc">Nejstarší první</option></select></div></div><div id="tripList"></div></div>
+</section>
+
+<section id="settings" class="hidden">
+<div class="panel"><h2>Seznam lidí</h2><p class="small">Předvyplněno je osm míst. Jakmile někoho použiješ v jízdě, zůstane v seznamu automaticky. Jméno můžeš kdykoliv změnit.</p><div id="peopleList"></div><div class="spacer"></div><div class="row"><input id="newPerson" placeholder="Jméno nového člověka" maxlength="32"><button class="btn" id="addPerson" style="flex:0 0 auto">Přidat</button></div></div>
+<div class="panel"><h2>Záloha dat</h2><p class="small">Exportuj zálohu, pokud měníš telefon nebo chceš mít kopii historie. Import nahradí aktuální data.</p><div class="row"><button class="btn secondary" id="exportData">Exportovat</button><button class="btn secondary" id="importBtn">Importovat</button></div><input id="importFile" type="file" accept="application/json,.json" class="hidden"><div class="spacer"></div><button class="btn danger" id="resetData" style="width:100%">Smazat všechna data</button></div>
+</section>
+</main>
+<footer>Data se ukládají pouze v tomto prohlížeči a telefonu. Pravidelně si vytvářej zálohu.</footer>
+
+<div id="modal" class="hidden" style="position:fixed;inset:0;background:#10202c99;z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:12px">
+<div class="panel" style="width:100%;max-width:500px;margin:0;border-radius:20px 20px 16px 16px">
+<div class="between"><h2 id="modalTitle">Vyber člověka</h2><button class="btn ghost" id="modalClose">Zavřít</button></div>
+<div id="modalChoices" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
+</div></div>
+
+<script>
+const KEY='spolujizda_v1';
+const defaultPeople=['Adam','Boris','Cyril','David','Erik','Filip','Gustav','Honza'].map((name,i)=>({id:'p'+(i+1),name,active:true}));
+let state=load();
+let editingId=null, activeSeat=null;
+let seatIds=[null,null,null,null];
+
+function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.people)&&Array.isArray(x.trips))return x}catch(e){}return {people:defaultPeople,trips:[]}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
+function today(){let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function person(id){return state.people.find(p=>p.id===id)}
+function name(id){return person(id)?.name||'Neznámý'}
+function activePeople(){return state.people.filter(p=>p.active!==false)}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function setTab(tab){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));['new','debts','history','settings'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));if(tab==='debts')renderDebts();if(tab==='history')renderHistory();if(tab==='settings')renderPeople()}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+function fillSelects(){
+ const d=document.getElementById('driver'), old=d.value;
+ d.innerHTML='<option value="">Vyber řidiče…</option>'+activePeople().map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+ if(activePeople().some(p=>p.id===old))d.value=old;
+ const f=document.getElementById('historyFilter'), prev=f.value;
+ f.innerHTML='<option value="">Všichni</option>'+state.people.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+ f.value=prev;
+}
+function renderCar(){
+ let driverId=document.getElementById('driver').value;
+ document.getElementById('driverName').textContent=driverId?name(driverId):'Vyber řidiče';
+ seatIds.forEach((id,i)=>{let el=document.getElementById('seat'+i);if(id){el.className='seat selected';el.innerHTML=`<span class="emoji">🧍</span><span class="role">${i===0?'Vpředu':'Vzadu'}</span><span class="person">${escapeHtml(name(id))}</span>`}else{el.className='seat empty';el.innerHTML=`<span class="emoji">🧍</span><span class="role">${i===0?'Spolujezdec':'Vzadu'}</span><span class="person">Volné místo</span>`}});
+}
+document.getElementById('driver').addEventListener('change',()=>{let d=document.getElementById('driver').value;seatIds=seatIds.map(id=>id===d?null:id);renderCar()});
+for(let i=0;i<4;i++)document.getElementById('seat'+i).addEventListener('click',()=>openSeat(i));
+function openSeat(i){activeSeat=i;let driverId=document.getElementById('driver').value;let used=seatIds.filter((x,j)=>x&&j!==i);let choices=activePeople().filter(p=>p.id!==driverId&&!used.includes(p.id));let box=document.getElementById('modalChoices');box.innerHTML='';let clear=document.createElement('button');clear.className='btn ghost';clear.textContent='Nechat volné';clear.onclick=()=>{seatIds[activeSeat]=null;closeModal();renderCar()};box.append(clear);choices.forEach(p=>{let b=document.createElement('button');b.className='btn secondary';b.textContent=p.name;b.onclick=()=>{seatIds[activeSeat]=p.id;closeModal();renderCar()};box.append(b)});document.getElementById('modalTitle').textContent=i===0?'Přední spolujezdec':'Zadní spolujezdec';document.getElementById('modal').classList.remove('hidden')}
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+document.getElementById('modalClose').onclick=closeModal;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.getElementById('clearSeats').onclick=()=>{seatIds=[null,null,null,null];renderCar()};
+function resetForm(){editingId=null;seatIds=[null,null,null,null];document.getElementById('tripDate').value=today();document.getElementById('driver').value='';document.getElementById('formTitle').textContent='Zaznamenat jízdu';document.getElementById('saveTrip').textContent='Uložit jízdu';document.getElementById('cancelEdit').classList.add('hidden');renderCar()}
+document.getElementById('saveTrip').onclick=()=>{
+ let date=document.getElementById('tripDate').value,driver=document.getElementById('driver').value;
+ if(!date||!driver){alert('Vyber datum a řidiče.');return}
+ let passengers=seatIds.filter(Boolean);
+ if(new Set(passengers).size!==passengers.length||passengers.includes(driver)){alert('Každý člověk může být v autě pouze jednou.');return}
+ let trip={id:editingId||('t'+Date.now()),date,driver,passengers};
+ if(editingId){state.trips=state.trips.map(t=>t.id===editingId?trip:t)}else state.trips.push(trip);
+ [driver,...passengers].forEach(id=>{let p=person(id);if(p)p.active=true});
+ persist();resetForm();setTab('history');alert('Jízda uložena.');
+};
+document.getElementById('cancelEdit').onclick=()=>resetForm();
+
+function calculate(){
+ let debt={};state.people.forEach(p=>debt[p.id]={});
+ state.trips.forEach(t=>(t.passengers||[]).forEach(pid=>{if(!debt[pid])debt[pid]={};if(!debt[t.driver])debt[t.driver]={};debt[pid][t.driver]=(debt[pid][t.driver]||0)+1}));
+ let pairs=[];
+ for(let i=0;i<state.people.length;i++)for(let j=i+1;j<state.people.length;j++){let a=state.people[i].id,b=state.people[j].id;let ab=(debt[a]?.[b]||0),ba=(debt[b]?.[a]||0),net=ab-ba;if(net>0)pairs.push({from:a,to:b,count:net});if(net<0)pairs.push({from:b,to:a,count:-net})}
+ let totals={};state.people.forEach(p=>totals[p.id]=0);
+ pairs.forEach(x=>{totals[x.from]-=x.count;totals[x.to]+=x.count});
+ return {pairs,totals};
+}
+function renderDebts(){
+ let {pairs,totals}=calculate();
+ document.getElementById('debtPeople').innerHTML=state.people.map(p=>{let v=totals[p.id]||0;return `<div class="personrow"><div><b>${escapeHtml(p.name)}</b><div class="small">${v<0?'Dluží celkem':v>0?'Má k dobru':'Vyrovnáno'}</div></div><div class="balance ${v<0?'neg':v>0?'pos':'zero'}">${v>0?'+':''}${v}</div></div>`}).join('');
+ document.getElementById('debtPairs').innerHTML=pairs.length?pairs.map(x=>`<div class="personrow"><div><b>${escapeHtml(name(x.from))}</b><div class="small">dluží člověku ${escapeHtml(name(x.to))}</div></div><div class="balance neg">${x.count} ${x.count===1?'jízda':'jízdy'}</div></div>`).join(''):'<p class="muted">Nikdo nikomu nic nedluží. Vše je vyrovnané.</p>';
+}
+function renderHistory(){
+ let filter=document.getElementById('historyFilter').value,sort=document.getElementById('sortOrder').value;
+ let trips=[...state.trips].filter(t=>!filter||t.driver===filter||(t.passengers||[]).includes(filter)).sort((a,b)=>sort==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
+ document.getElementById('tripCount').textContent=state.trips.length+' jízd';
+ let list=document.getElementById('tripList');
+ list.innerHTML=trips.length?trips.map(t=>`<div class="trip"><div class="between"><span class="date">${escapeHtml(t.date.split('-').reverse().join('. '))}.</span><span class="tag">${(t.passengers||[]).length+1} / 5 míst</span></div><div style="margin-top:7px"><b>Řidič:</b> ${escapeHtml(name(t.driver))}</div><div class="small" style="margin-top:3px"><b>Spolujezdci:</b> ${(t.passengers||[]).length?t.passengers.map(x=>escapeHtml(name(x))).join(', '):'Nikdo'}</div><div class="actions"><button class="btn secondary" onclick="editTrip('${t.id}')">Upravit</button><button class="btn danger" onclick="deleteTrip('${t.id}')">Smazat</button></div></div>`).join(''):'<p class="muted">Zatím tu nejsou žádné jízdy. Můžeš přidat i jízdu z minulého týdne nebo měsíce.</p>';
+}
+document.getElementById('historyFilter').onchange=renderHistory;document.getElementById('sortOrder').onchange=renderHistory;
+window.editTrip=id=>{let t=state.trips.find(x=>x.id===id);if(!t)return;editingId=id;document.getElementById('tripDate').value=t.date;document.getElementById('driver').value=t.driver;seatIds=[...t.passengers,null,null,null,null].slice(0,4);document.getElementById('formTitle').textContent='Upravit jízdu';document.getElementById('saveTrip').textContent='Uložit změny';document.getElementById('cancelEdit').classList.remove('hidden');renderCar();setTab('new');window.scrollTo({top:0,behavior:'smooth'})};
+window.deleteTrip=id=>{if(confirm('Opravdu smazat tuto jízdu? Dluhy se přepočítají.')){state.trips=state.trips.filter(t=>t.id!==id);persist();renderHistory();renderDebts()}};
+function renderPeople(){document.getElementById('peopleList').innerHTML=state.people.map(p=>`<div class="personrow"><div style="flex:1"><input aria-label="Jméno" value="${escapeHtml(p.name)}" data-name="${p.id}" maxlength="32"></div><button class="btn ${p.active===false?'secondary':'ghost'}" data-toggle="${p.id}" style="flex:0 0 auto">${p.active===false?'Neaktivní':'Aktivní'}</button></div>`).join('');document.querySelectorAll('[data-name]').forEach(el=>el.onchange=()=>{let p=person(el.dataset.name);if(p&&el.value.trim()){p.name=el.value.trim();persist()}});document.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=()=>{let p=person(el.dataset.toggle);p.active=p.active===false;persist()})}
+document.getElementById('addPerson').onclick=()=>{let inp=document.getElementById('newPerson'),n=inp.value.trim();if(!n)return;if(state.people.some(p=>p.name.toLowerCase()===n.toLowerCase())){alert('Toto jméno už v seznamu je.');return}state.people.push({id:'p'+Date.now(),name:n,active:true});inp.value='';persist()};
+document.getElementById('exportData').onclick=()=>{let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='spolujizda-zaloha-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let x=JSON.parse(await f.text());if(!Array.isArray(x.people)||!Array.isArray(x.trips))throw Error();if(!confirm('Import nahradí současný seznam lidí a historii. Pokračovat?'))return;state=x;persist();resetForm();alert('Záloha byla načtena.')}catch(err){alert('Soubor není platná záloha Spolujízdy.')}e.target.value=''};
+document.getElementById('resetData').onclick=()=>{if(confirm('Opravdu smazat všechny jízdy i vlastní změny jmen?')){state={people:defaultPeople.map(p=>({...p})),trips:[]};persist();resetForm()}};
+function renderAll(){fillSelects();renderCar();renderDebts();renderHistory();renderPeople()}
+document.getElementById('tripDate').value=today();renderAll();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>

@@ -1,0 +1,17 @@
+{
+  "name": "Spolujízda – evidence dojíždění",
+  "short_name": "Spolujízda",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f5f7",
+  "theme_color": "#172b3a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
