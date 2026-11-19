@@ -96,7 +96,7 @@ footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-s
 </section>
 
 <section id="debts" class="hidden">
-<div class="panel"><h2>Dluhy podle lidí</h2><div class="small">Rozkliknutím člověka zobrazíš, komu dluží jízdy.</div><div id="debtPeople" style="margin-top:10px"></div></div>
+<div class="panel"><h2>Moje dluhy</h2><div class="small">Vyber, který člověk v seznamu jsi ty. Potom se budou počítat pouze dluhy vůči tobě a tvoje dluhy vůči ostatním.</div><div style="margin:10px 0"><label for="meSelect">Já jsem</label><select id="meSelect"></select></div><div id="debtPeople" style="margin-top:10px"></div></div>
 </section>
 
 <section id="history" class="hidden">
@@ -212,12 +212,27 @@ function calculate(){
 }
 function renderDebts(){
  let {pairs}=calculate();
- document.getElementById('debtPeople').innerHTML=state.people.map(p=>{
-   let owed=pairs.filter(x=>x.from===p.id);
-   let total=owed.reduce((sum,x)=>sum+x.count,0);
-   let detail=owed.length?owed.map(x=>`<div class="personrow"><span>Dluží člověku <b>${escapeHtml(name(x.to))}</b></span><b class="neg">${x.count} ${x.count===1?'jízda':'jízdy'}</b></div>`).join(''):'<div class="small" style="padding:10px 0">Nikomu nic nedluží.</div>';
-   return `<details class="debt-person"><summary><span>${escapeHtml(p.name)}</span><span class="small">${total?`Dluží ${total} ${total===1?'jízdu':'jízd'}`:'Bez dluhu'}</span></summary><div class="debt-detail">${detail}</div></details>`;
- }).join('');
+ const select=document.getElementById('meSelect');
+ const meId=state.meId||'';
+ select.innerHTML='<option value="">Vyber sebe ze seznamu…</option>'+state.people.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+ select.value=meId;
+ select.onchange=()=>{state.meId=select.value;persist()};
+ const box=document.getElementById('debtPeople');
+ if(!meId){
+   box.innerHTML='<p class="muted">Nejdřív vyber, kdo jsi ty.</p>';
+   return;
+ }
+ const toMe=pairs.filter(x=>x.to===meId);
+ const fromMe=pairs.filter(x=>x.from===meId);
+ const totalToMe=toMe.reduce((s,x)=>s+x.count,0);
+ const totalFromMe=fromMe.reduce((s,x)=>s+x.count,0);
+ const rows=(items,reverse)=>items.length?items.map(x=>{
+   const other=reverse?x.to:x.from;
+   return `<div class="personrow"><span><b>${escapeHtml(name(other))}</b> ${reverse?'dlužím':'mi dluží'}</span><b class="${reverse?'neg':'pos'}">${x.count} ${x.count===1?'jízdu':'jízdy'}</b></div>`;
+ }).join(''):'<div class="small" style="padding:10px 0">Žádné nevyrovnané jízdy.</div>';
+ box.innerHTML=
+   `<div class="debt-person"><div class="between" style="padding:12px 2px"><b>Mně dluží</b><span class="small">${totalToMe} ${totalToMe===1?'jízda':'jízd'}</span></div>${rows(toMe,false)}</div>
+    <div class="debt-person"><div class="between" style="padding:12px 2px"><b>Já dlužím</b><span class="small">${totalFromMe} ${totalFromMe===1?'jízdu':'jízd'}</span></div>${rows(fromMe,true)}</div>`;
 }
 function renderHistory(){
  let filter=document.getElementById('historyFilter').value,sort=document.getElementById('sortOrder').value;
@@ -237,6 +252,6 @@ document.getElementById('importFile').onchange=async e=>{let f=e.target.files[0]
 document.getElementById('resetData').onclick=()=>{if(confirm('Opravdu smazat všechny jízdy i vlastní změny jmen?')){state={people:defaultPeople.map(p=>({...p})),trips:[]};persist();resetForm()}};
 function renderAll(){fillSelects();renderCar();renderDebts();renderHistory();renderPeople()}
 document.getElementById('tripDate').value=today();renderAll();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js?v=3',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js?v=4',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 </script>
 </body></html>
