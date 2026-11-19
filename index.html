@@ -30,12 +30,11 @@ button{font:inherit;cursor:pointer}
 .car:before{content:"";position:absolute;inset:8% 9%;border:1px solid #c6d1d7;border-radius:42% 42% 18px 18px;pointer-events:none}
 .wind{height:24px;background:#c7dbe3;border-radius:50% 50% 8px 8px;margin:0 18% 13px;position:relative}
 .seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;position:relative}
-.seat{border:2px solid #aebdc5;background:#fff;border-radius:13px;min-height:84px;padding:9px 5px;text-align:center;color:var(--ink);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px}
-.seat .person{font-size:13px;font-weight:750;overflow-wrap:anywhere}.seat .role{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.seat{border:2px solid #aebdc5;background:#fff;border-radius:13px;min-height:88px;padding:10px 5px;text-align:center;color:var(--ink);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px}
+.seat .person{font-size:13px;font-weight:750;overflow-wrap:anywhere}.seat .role{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 .seat.driver{border-color:#176b87;background:#dceff5}.seat.selected{border-color:#176b87;background:#e5f2f6}
-.seat.empty{border-style:dashed;color:#84949d}.seat .emoji{font-size:20px;line-height:1}
+.seat.empty{border-style:dashed;color:#84949d}
 .rear{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px;position:relative}
-.rear .seat{min-height:76px}
 .dash{height:7px;background:#aab9c1;border-radius:8px;margin:15px 14% 8px;position:relative}
 select.person-select{margin-top:5px;font-size:14px}
 .notice{background:#f0f6f8;border-radius:12px;padding:11px 12px;font-size:13px;color:#355365}
@@ -46,7 +45,7 @@ select.person-select{margin-top:5px;font-size:14px}
 .actions{display:flex;gap:7px;margin-top:10px}.actions button{flex:1}
 .hidden{display:none!important}
 footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-size:11px;text-align:center}
-@media(min-width:600px){main{padding-top:22px}.seat{min-height:92px}.rear .seat{min-height:84px}}
+@media(min-width:600px){main{padding-top:22px}}
 </style>
 </head>
 <body>
@@ -71,14 +70,14 @@ footer{max-width:760px;margin:auto;padding:0 14px 25px;color:var(--muted);font-s
 <div class="car">
 <div class="wind"></div>
 <div class="seats">
-<button class="seat driver" id="driverSeat" type="button"><span class="emoji">🧑‍✈️</span><span class="role">Řidič</span><span class="person" id="driverName">Vyber řidiče</span></button>
-<button class="seat empty" id="seat0" type="button"><span class="emoji">🧍</span><span class="role">Spolujezdec</span><span class="person">Volné místo</span></button>
+<button class="seat driver" id="driverSeat" type="button"><span class="role">Řidič</span><span class="person" id="driverName">Vyber řidiče</span></button>
+<button class="seat empty" id="seat0" type="button"><span class="role">Spolujezdec 1</span><span class="person">Volné místo</span></button>
 </div>
 <div class="dash"></div>
 <div class="rear">
-<button class="seat empty" id="seat1" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
-<button class="seat empty" id="seat2" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
-<button class="seat empty" id="seat3" type="button"><span class="emoji">🧍</span><span class="role">Vzadu</span><span class="person">Volné</span></button>
+<button class="seat empty" id="seat1" type="button"><span class="role">Spolujezdec 2</span><span class="person">Volné místo</span></button>
+<button class="seat empty" id="seat2" type="button"><span class="role">Spolujezdec 3</span><span class="person">Volné místo</span></button>
+<button class="seat empty" id="seat3" type="button"><span class="role">Spolujezdec 4</span><span class="person">Volné místo</span></button>
 </div>
 </div>
 <div class="spacer"></div>
@@ -142,7 +141,7 @@ function fillSelects(){
 function renderCar(){
  let driverId=document.getElementById('driver').value;
  document.getElementById('driverName').textContent=driverId?name(driverId):'Vyber řidiče';
- seatIds.forEach((id,i)=>{let el=document.getElementById('seat'+i);if(id){el.className='seat selected';el.innerHTML=`<span class="emoji">🧍</span><span class="role">${i===0?'Vpředu':'Vzadu'}</span><span class="person">${escapeHtml(name(id))}</span>`}else{el.className='seat empty';el.innerHTML=`<span class="emoji">🧍</span><span class="role">${i===0?'Spolujezdec':'Vzadu'}</span><span class="person">Volné místo</span>`}});
+ seatIds.forEach((id,i)=>{let el=document.getElementById('seat'+i);let label='Spolujezdec '+(i+1);if(id){el.className='seat selected';el.innerHTML=`<span class="role">${label}</span><span class="person">${escapeHtml(name(id))}</span>`}else{el.className='seat empty';el.innerHTML=`<span class="role">${label}</span><span class="person">Volné místo</span>`}});
 }
 document.getElementById('driver').addEventListener('change',()=>{let d=document.getElementById('driver').value;seatIds=seatIds.map(id=>id===d?null:id);renderCar()});
 for(let i=0;i<4;i++)document.getElementById('seat'+i).addEventListener('click',()=>openSeat(i));
